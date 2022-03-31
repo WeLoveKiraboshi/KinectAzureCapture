@@ -52,7 +52,6 @@ private:
     k4a_image_t depth_image = NULL;
     k4a_image_t color_image = NULL;
     k4a_image_t ir_image = NULL;
-    k4a_image_t transformed_color_image = NULL;
     k4a_image_t transformed_depth_image = NULL;
 
     bool continueornot = true;

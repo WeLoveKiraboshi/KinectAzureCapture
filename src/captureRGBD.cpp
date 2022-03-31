@@ -200,8 +200,8 @@ void Capture::sysLoop()
 		kinect.getDepth(depthOri);
         k4a::Vector IMU_vec;
         k4a::Vector grav_vec;
-        kinect.getIMU(IMU_vec);
-        kinect.getGravity(grav_vec);
+        //kinect.getIMU(IMU_vec);
+        //kinect.getGravity(grav_vec);
 		
 		cv::cvtColor(color_8UC4, colorOri, CV_BGRA2BGR);
 		color_8UC4.release();
@@ -309,6 +309,12 @@ void Capture::sysLoop()
 
 	if (saveFrames)
 	{
+        std::ofstream rgb_file_writer;
+        std::ofstream depth_file_writer;
+        std::ofstream associate_file_writer;
+        rgb_file_writer.open(folderPath+"/rgb.txt", std::ios::out);
+        depth_file_writer.open(folderPath+"/depth.txt", std::ios::out);
+        associate_file_writer.open(folderPath+"/associate.txt", std::ios::out);
 
 		std::cout << "Save images" << std::endl;
 		for (int i = 0; i < idx; ++i)
@@ -349,17 +355,20 @@ void Capture::sysLoop()
             ofs_gravity << gravity_vec.Y << std::endl;
             ofs_gravity << gravity_vec.Z << std::endl;
 
-			
-			
-			
-
-
+            std::string timestamp = colorName.substr(1, 17);
+            rgb_file_writer << timestamp << " " << "rgb"+colorName << std::endl;
+            depth_file_writer << timestamp << " " << "depth"+depthName << std::endl;
+            associate_file_writer << timestamp << " " << "rgb"+colorName << " " << timestamp << " " << "depth"+depthName << std::endl;
 		}
-		
+
+        rgb_file_writer.close();
+        depth_file_writer.close();
+        associate_file_writer.close();
 	}
 
 
 	cv::destroyAllWindows();
+	kinect.~Kinect();
 
 	return;
 }

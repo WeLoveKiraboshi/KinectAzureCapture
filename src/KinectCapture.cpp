@@ -190,7 +190,7 @@ void Kinect::finalize()
 	cv::destroyAllWindows();
 
 	// Close Sensor
-    //k4a::device::close();
+    k4a_device_close(device);
 }
 
 
@@ -247,7 +247,7 @@ void Kinect::save_calibration_file(std::string save_path)
 // Update Data
 void Kinect::update()
 {
-    // Get a capture
+    //Get a capture
     switch (k4a_device_get_capture(device, &capture, TIMEOUT_IN_MS))
     {
         case K4A_WAIT_RESULT_SUCCEEDED:
@@ -261,7 +261,7 @@ void Kinect::update()
 	// Update Color
 	updateColor();
 
-	// Update Depth
+    // Update Depth
 	updateDepth();
 
 	//transform Depth to Color Frame
@@ -269,6 +269,13 @@ void Kinect::update()
 
     //update IMU data
     updateIMU();
+
+    // Release the capture
+    k4a_image_release(color_image);
+    k4a_image_release(depth_image);
+    k4a_image_release(transformed_depth_image);
+    k4a_capture_release(capture);
+
 }
 
 // Update Color
@@ -280,16 +287,10 @@ inline void Kinect::updateColor()
     if (color_image == 0)
     {
         std::cout << "Failed to get color image from capture" << std::endl;
-
     }
     int color_image_width_pixels = k4a_image_get_width_pixels(color_image);
     int color_image_height_pixels = k4a_image_get_height_pixels(color_image);
-    imBGRA = cv::Mat(color_image_height_pixels, color_image_width_pixels, CV_8UC4, (void*)k4a_image_get_buffer(color_image));
-//    imshow("color Image BGRA", imBGRA);
-//    cv::waitKey(0);
-    //cvtColor(imBGRA, imBGR, CV_BGRA2BGR);
-    //    imshow("color Image BGR", imBGRA);
-    //    waitKey(1);
+    imBGRA = cv::Mat(color_image_height_pixels, color_image_width_pixels, CV_8UC4, (void*)k4a_image_get_buffer(color_image)).clone();
 }
 
 // Update Depth(depth_image & imD)
@@ -301,12 +302,7 @@ inline void Kinect::updateDepth()
     {
         std::cout <<"Failed to get depth image from capture" << std::endl;
     }
-
-    //int depth_image_width_pixels = k4a_image_get_width_pixels(depth_image);
-    //int depth_image_height_pixels = k4a_image_get_height_pixels(depth_image);
-    //imD = cv::Mat(depth_image_height_pixels, depth_image_width_pixels, CV_16UC1, (void*)k4a_image_get_buffer(depth_image));
 }
-
 
 
 inline void Kinect::updateIMU()
@@ -325,9 +321,6 @@ inline void Kinect::updateIMU()
     }
     // Access the accelerometer readings
     imu_Acc = imu_sample.acc_sample;
-//    if (std::abs(imu_Acc.Length() - 9.81f) < 0.2f) {
-//
-//    }
     imu_grav = extract_gravity_from_imu(imu_Acc);
 }
 
@@ -370,8 +363,6 @@ void Kinect::transform_depth_to_color()
         cout << "Failed to compute transformed depth image" << endl;
     }
 
-    //std::cout << "width = " << width << std::endl;
-    //std::cout << "height = " << height << std::endl;
     uint8_t *buffer = k4a_image_get_buffer(transformed_depth_image);
     uint16_t *depth_buffer = reinterpret_cast<uint16_t *>(buffer);
     cv::Mat mat(color_image_height_pixels, color_image_width_pixels, CV_16U);//CV_MAKETYPE(DataType<uint16_t>::type, 1));
@@ -468,15 +459,6 @@ void Kinect::getDepth(cv::Mat& depth)
     cv::resize(im_transformed_depth_image, resizeMat, cv::Size(), 640./(float)im_transformed_depth_image.cols, 480./(float)im_transformed_depth_image.rows);
     //std::cout << resizeMat.rows << " " << resizeMat.cols << std::endl; // (720 1280) => (480, 640)
 
-
-//    double min;
-//    double max;
-//    cv::minMaxIdx(im_transformed_depth_image, &min, &max);
-//    cv::Mat adjMap;
-//    im_transformed_depth_image.convertTo(adjMap,CV_8UC1, 255 / (max-min), -min);
-//    cv::Mat falseColorsMap;
-//    cv::applyColorMap(adjMap, falseColorsMap, cv::COLORMAP_JET);
-//    cv::imshow("depth",falseColorsMap);
     resizeMat.copyTo(depth);
 }
 
@@ -491,7 +473,7 @@ void Kinect::getGravity(k4a::Vector& vec)
 {
     vec = imu_grav;//.Normalized();
     //std::cout << "Before : " << imu_grav.X << " " << imu_grav.Y << " " << imu_grav.Z << std::endl;
-    std::cout << "After : " << vec.X << " " << vec.Y << " " << vec.Z << std::endl;
+    //std::cout << "After : " << vec.X << " " << vec.Y << " " << vec.Z << std::endl;
 
     //k4a::Vector angle = vec.Angle(k4a::Vector(0,1.0,0));
     //std::cout << "After : " << vec.X << " " << vec.Y << " " << vec.Z << std::endl;
